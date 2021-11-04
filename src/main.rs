@@ -71,15 +71,16 @@ impl Application for GUI {
         //init widgets
         let tick_text = Text::new(duration_text).font(FONT).size(60);
         let start_stop_button = Button::new(&mut self.start_stop_button_state, start_stop_text)
-            .min_width(80).on_press(start_stop_message);
+            .min_width(80)
+            .on_press(start_stop_message);
         let reset_button = Button::new (
             &mut self.reset_button_state,
             Text::new("reset")
-            .horizontal_alignment(HorizontalAlignment::Center)
-            .font(FONT),
+                .horizontal_alignment(HorizontalAlignment::Center)
+                .font(FONT),
         )
-        .min_width(80);
-        .on_press(Message::Reset);
+            .min_width(80)
+            .on_press(Message::Reset);
 
         //prepare Column
         Column::new()
