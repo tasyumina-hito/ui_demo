@@ -45,6 +45,15 @@ impl Application for GUI {
         _message: Self::Message,
         _clipboard: &mut Clipboard,
     ) -> Command<Self::Message> {
+        match _message {
+            Message::Start => {
+                self.tick_state = TickState::Ticking;
+            }
+            Message::Stop => {
+                self.tick_state = TickState::Stopped;
+            }
+            Message::Reset => {}
+        }
         Command::none()
     }
 
@@ -57,7 +66,7 @@ impl Application for GUI {
             TickState::Stopped => Text::new("Start")
                 .horizontal_alignment(HorizontalAlignment::Center)
                 .font(FONT),
-                TickState::Ticking => Text::new("start")
+                TickState::Ticking => Text::new("Stop")
                 .horizontal_alignment(HorizontalAlignment::Center)
                 .font(FONT),
         };
