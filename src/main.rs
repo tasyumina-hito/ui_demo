@@ -1,6 +1,19 @@
 use iced::{button, executor, Align, Application, Button, Clipboard, Column, Command, Element, Font,
     HorizontalAlignment, Length, Row, Settings, Text,
 };
+use iced_futures::{self, futures};
+use std::time::{Duration, Instant};
+
+const FONT: Font = Font::External {
+    name: "PixelMplus12-Regular",
+    bytes: include_bytes!("../rsc/PixelMplus12-Regular.ttf"),
+};
+
+fn main() -> iced::Result {
+    let mut settings = Settings::default();
+    settings.window.size = (400u32, 120u32);
+    GUI::run(settings)
+}
 
 struct GUI {
     tick_state: TickState,
@@ -13,6 +26,7 @@ pub enum Message {
     Start,
     Stop,
     Reset,
+    Update,
 }
 
 pub enum TickState {
@@ -109,13 +123,35 @@ impl Application for GUI {
     }
 }
 
-const FONT: Font = Font::External {
-    name: "PixelMplus12-Regular",
-    bytes: include_bytes!("../rsc/PixelMplus12-Regular.ttf"),
-};
+pub struct Timer {
+    duration: Duration,
+}
 
-fn main() -> iced::Result {
-    let mut settings = Settings::default();
-    settings.window.size = (400u32, 120u32);
-    GUI::run(settings)
+impl Timer {
+    fn new(duration: Duration) -> Timer {
+        Timer { duration: duration }
+    }
+}
+
+impl<H, E> iced_native::subscription::Recipe<H, E> for Timer
+where
+    H: std::hash::Hasher,
+{
+    type Output = Instant;
+
+    fn hash(&self, state: &mut H) {
+        use std::hash::Hash;
+        std::any::TypeId::of::<Self>().hash(state);
+        self.duration.hash(state);
+    }
+
+    fn stream(
+        self: Box<Self>,
+        _input: futures::stream::BoxStream<'static, E>,
+    ) -> futures::stream::BoxStream<'static, Self::Output> {
+        use futures::stream::StreamExt;
+        async_std::stream::interval(self.duration)
+            .map(|_| Instant::now())
+            .boxed()
+    }
 }
