@@ -1,5 +1,6 @@
-use iced::{button, executor, Align, Application, Button, Clipboard, Column, Command, Element, Font,
-    HorizontalAlignment, Length, Row, Settings, Text,
+use iced::{
+    button, executor, Align, Application, Button, Clipboard, Column, Command, Element, Font,
+    HorizontalAlignment, Length, Row, Settings, Subscription, Text,
 };
 use iced_futures::{self, futures};
 use std::time::{Duration, Instant};
@@ -9,6 +10,11 @@ const FONT: Font = Font::External {
     bytes: include_bytes!("../rsc/PixelMplus12-Regular.ttf"),
 };
 
+const FPS: u64 = 30;
+const MILLISEC: u64 = 1000;
+const MINUTE: u64 = 60;
+const HOUR: u64 = 60 * MINUTE;
+
 fn main() -> iced::Result {
     let mut settings = Settings::default();
     settings.window.size = (400u32, 120u32);
@@ -16,6 +22,8 @@ fn main() -> iced::Result {
 }
 
 struct GUI {
+    last_update: Instant,
+    total_dulation: Duration,
     tick_state: TickState,
     start_stop_button_state: button::State,
     reset_button_state: button::State,
@@ -42,6 +50,8 @@ impl Application for GUI {
     fn new(_flags: ()) -> (GUI, Command<Self::Message>) {
         (
             GUI {
+                last_update: Instant::now(),
+                total_dulation: Duration::default(),
                 tick_state: TickState::Stopped,
                 start_stop_button_state: button::State::new(),
                 reset_button_state: button::State::new(),
@@ -62,18 +72,43 @@ impl Application for GUI {
         match _message {
             Message::Start => {
                 self.tick_state = TickState::Ticking;
+                self.last_update = Instant::now();
             }
             Message::Stop => {
                 self.tick_state = TickState::Stopped;
+                self.total_dulation += Instant::now() - self.last_update;
             }
-            Message::Reset => {}
+            Message::Reset => {
+                self.last_update = Instant::now();
+                self.total_dulation = Duration::default();
+            }
+            Message::Update => match self.tick_state {
+                TickState::Ticking => {
+                    let now_update = Instant::now();
+                    self.total_dulation += now_update - self.last_update;
+                    self.last_update = now_update;
+                }
+                _ => {}
+            },
         }
         Command::none()
     }
 
+    fn subscription(&self) -> Subscription<Message> {
+        let timer = Timer::new(Duration::from_millis(MILLISEC / FPS));
+        iced::Subscription::from_recipe(timer).map(|_| Message::Update)
+    }
+
     fn view(&mut self) -> Element<Self::Message> {
         //prepare dulation text
-        let duration_text = "00:00:00.00";
+        let seconds = self.total_dulation.as_secs();
+        let duration_text = format!(
+            "{:0>2}:{:0>2}:{:0>2}.{:0>2}",
+            seconds / HOUR,
+            (seconds % HOUR) / MINUTE,
+            seconds % MINUTE,
+            self.total_dulation.subsec_millis() / 10,
+        );
 
         //prepare start/stop text
         let start_stop_text = match self.tick_state {
