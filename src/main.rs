@@ -29,17 +29,17 @@ struct GUI {
     reset_button_state: button::State,
 }
 
+pub enum TickState {
+    Stopped,
+    Ticking,
+}
+
 #[derive(Debug, Clone)]
 pub enum Message {
     Start,
     Stop,
     Reset,
     Update,
-}
-
-pub enum TickState {
-    Stopped,
-    Ticking,
 }
 
 impl Application for GUI {
